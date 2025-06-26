@@ -13,28 +13,23 @@ import { join } from "node:path";
 
 const ASSETS_PATH = join(import.meta.dirname, "packages/quill/src/assets");
 
-// Helper function to update file content with validation
+// Helper function to update file content with validation.
 function updateFile(
   filePath: string,
-  replacements: Array<{ search: string | RegExp; replace: string }>
+  replacements: Array<{ search: string; replace: string }>
 ) {
   let content = readFileSync(filePath, "utf8");
 
   replacements.forEach(({ search, replace }, index) => {
-    // Count occurrences of the search pattern
+    // Count occurrences of the search pattern.
     let occurrences = 0;
-    if (search instanceof RegExp) {
-      const matches = content.match(new RegExp(search, "g"));
-      occurrences = matches ? matches.length : 0;
-    } else {
-      let pos = 0;
-      while ((pos = content.indexOf(search, pos)) !== -1) {
-        occurrences++;
-        pos += search.length;
-      }
+    let pos = 0;
+    while ((pos = content.indexOf(search, pos)) !== -1) {
+      occurrences++;
+      pos += search.length;
     }
 
-    // Validate exactly one occurrence
+    // Expect exactly one occurrence.
     if (occurrences === 0) {
       throw new Error(
         `Pattern not found in ${filePath} (replacement #${index + 1}):\n` +
@@ -51,7 +46,6 @@ function updateFile(
       );
     }
 
-    // Perform the replacement
     content = content.replace(search, replace);
     console.log(`✓ Found and replaced pattern #${index + 1} in ${filePath}`);
   });
@@ -62,7 +56,6 @@ function updateFile(
 
 console.log("\n✨ All style updates completed successfully!");
 
-// Main execution with error handling
 try {
   console.log("🚀 Starting Quill style modifications...\n");
 
@@ -70,11 +63,16 @@ try {
   const snowStylPath = join(ASSETS_PATH, "snow.styl");
   updateFile(snowStylPath, [
     {
-      search: /borderColor = #ccc/,
+      search: "borderColor = #ccc",
       replace: "borderColor = var(--color-border)",
     },
     {
-      search: /\.ql-container\.ql-snow\n  border: 1px solid borderColor/,
+      search: "    color: activeColor",
+      replace: "",
+    },
+    {
+      search: `.ql-container.ql-snow
+  border: 1px solid borderColor`,
       replace: `.ql-container.ql-snow
   border: 1px solid borderColor
   border-radius: 0 0 4px 4px`,
@@ -85,14 +83,17 @@ try {
   const toolbarStylPath = join(ASSETS_PATH, "snow/toolbar.styl");
   updateFile(toolbarStylPath, [
     {
-      search:
-        /\.ql-toolbar\.ql-snow\n  border: 1px solid borderColor\n  box-sizing: border-box\n  font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif\n  padding: 8px/,
+      search: `.ql-toolbar.ql-snow
+  border: 1px solid borderColor
+  box-sizing: border-box
+  font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif
+`,
       replace: `.ql-toolbar.ql-snow
   border: 1px solid borderColor
   border-radius: 4px 4px 0 0
   box-sizing: border-box
   font-family: var(--font-family)
-  padding: 8px`,
+`,
     },
   ]);
 
@@ -101,62 +102,76 @@ try {
   updateFile(coreStylPath, [
     // Update .ql-editor line-height
     {
-      search:
-        /\.ql-editor\n  box-sizing: border-box\n  counter-reset: resets\(0\.\.MAX_INDENT\)\n  line-height: 1\.42/,
-      replace: `.ql-editor
-  box-sizing: border-box
-  counter-reset: resets(0..MAX_INDENT)
-  line-height: var(--default-line-height)`,
+      search: "  line-height: 1.42",
+      replace: "  line-height: var(--default-line-height)",
     },
-    // Update .ql-container font-size and font-family
     {
-      search:
-        /\.ql-container\n  box-sizing: border-box\n  font-family: Helvetica, Arial, sans-serif\n  font-size: 13px/,
-      replace: `.ql-container
-  box-sizing: border-box
-  font-family: var(--font-family)
-  font-size: var(--font-size-3)`,
+      search: `  p, ol, pre, blockquote, h1, h2, h3, h4, h5, h6
+    margin: 0
+    padding: 0`,
+      replace: "",
     },
-    // Update .ql-code-block-container font-family
     {
-      search: /  \.ql-code-block-container\n    font-family: monospace/,
-      replace: `  .ql-code-block-container
-    font-family: var(--code-font-family)`,
+      search: "  font-family: Helvetica, Arial, sans-serif",
+      replace: "  font-family: var(--font-family)",
+    },
+    {
+      search: "  font-size: 13px",
+      replace: "  font-size: var(--font-size-3)",
+    },
+    {
+      search: "    font-family: monospace",
+      replace: "    font-family: var(--code-font-family)",
+    },
+    {
+      search: `  ol
+    padding-left: 1.5em`,
+      replace: "",
     },
   ]);
 
   console.log("Processing base.styl...");
   const baseStylPath = join(ASSETS_PATH, "base.styl");
   updateFile(baseStylPath, [
-    // Remove font-size from h1-h6 elements
+    // Remove all this styling that Wirechunk sets.
     {
-      search:
-        /    h1\n      font-size: 2em\n    h2\n      font-size: 1\.5em\n    h3\n      font-size: 1\.17em\n    h4\n      font-size: 1em\n    h5\n      font-size: 0\.83em\n    h6\n      font-size: 0\.67em\n/,
-      replace: "",
-    },
-    // Remove text-decoration from a elements
-    {
-      search: /    a\n      text-decoration: underline/,
-      replace: "    a",
-    },
-    // First occurrence in .ql-editor context
-    {
-      search:
-        /    \.ql-code-block-container\n      margin-bottom: 5px\n      margin-top: 5px\n      padding: 5px 10px/,
-      replace: `    .ql-code-block-container
+      search: `  .ql-editor
+    h1
+      font-size: 2em
+    h2
+      font-size: 1.5em
+    h3
+      font-size: 1.17em
+    h4
+      font-size: 1em
+    h5
+      font-size: 0.83em
+    h6
+      font-size: 0.67em
+    a
+      text-decoration: underline
+    blockquote
+      border-left: 4px solid #ccc
       margin-bottom: 5px
       margin-top: 5px
-      padding: var(--space-3)`,
-    },
-    // Second occurrence with background and color
-    {
-      search:
-        /    \.ql-code-block-container\n      background-color: #23241f\n      color: #f8f8f2\n      overflow: visible/,
-      replace: `    .ql-code-block-container
-      background-color: var(--surface-ground)
-      color: var(--gray-12)
-      border-radius: var(--radius-3)
-      overflow: visible`,
+      padding-left: 16px
+    code, .ql-code-block-container
+      background-color: #f0f0f0
+      border-radius: 3px
+    .ql-code-block-container
+      margin-bottom: 5px
+      margin-top: 5px
+      padding: 5px 10px
+    code
+      font-size: 85%
+      padding: 2px 4px
+    .ql-code-block-container
+      background-color: #23241f
+      color: #f8f8f2
+      overflow: visible
+    img
+      max-width: 100%`,
+      replace: "",
     },
   ]);
 
